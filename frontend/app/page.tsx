@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Plot from "react-plotly.js";
 
 interface RaceData {
 	event: string;
@@ -10,25 +11,44 @@ interface RaceData {
 	drivers: string[];
 }
 
+interface TelemetryData {
+	driver: string;
+	speed: number[];
+	samples: number[];
+}
+
 export default function Home() {
-	const [data, setData] = useState<RaceData | null>(null);
+	const [raceData, setRaceData] = useState<RaceData | null>(null);
+	const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(
+		null,
+	);
+
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		async function fetchRaceData() {
+		async function fetchData() {
 			try {
-				const response = await fetch(
-					"http://localhost:8000/race/2024/Bahrain",
-				);
+				const [raceResponse, telemetryResponse] = await Promise.all([
+					fetch("http://localhost:8000/race/2024/Bahrain"),
+					fetch("http://localhost:8000/telemetry/2024/Bahrain/VER"),
+				]);
 
-				if (!response.ok) {
-					throw new Error(`HTTP Error: ${response.status}`);
+				if (!raceResponse.ok) {
+					throw new Error(`Race API Error: ${raceResponse.status}`);
 				}
 
-				const raceData = await response.json();
+				if (!telemetryResponse.ok) {
+					throw new Error(
+						`Telemetry API Error: ${telemetryResponse.status}`,
+					);
+				}
 
-				setData(raceData);
+				const race = await raceResponse.json();
+				const telemetry = await telemetryResponse.json();
+
+				setRaceData(race);
+				setTelemetryData(telemetry);
 			} catch (err) {
 				setError(
 					err instanceof Error ? err.message : "Something went wrong",
@@ -38,13 +58,12 @@ export default function Home() {
 			}
 		}
 
-		fetchRaceData();
+		fetchData();
 	}, []);
 
 	return (
 		<main className="min-h-screen bg-black text-white p-8">
 			<div className="max-w-6xl mx-auto">
-				{/* Header */}
 				<div className="mb-10">
 					<h1 className="text-5xl font-extrabold">
 						🏎️ F1 Strategy Lab
@@ -55,72 +74,86 @@ export default function Home() {
 					</p>
 				</div>
 
-				{/* Loading */}
 				{loading && (
 					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-						<p className="text-lg">Loading race data...</p>
+						<p className="text-lg">Loading telemetry...</p>
 					</div>
 				)}
 
-				{/* Error */}
 				{error && (
 					<div className="rounded-2xl border border-red-500 bg-red-950 p-6">
-						<p className="font-semibold">Error</p>
-
-						<p className="mt-2 text-red-300">{error}</p>
+						<p>{error}</p>
 					</div>
 				)}
 
-				{/* Data */}
-				{data && (
-					<>
-						{/* Race Info Card */}
-						<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
-							<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-								<div>
-									<h2 className="text-3xl font-bold">
-										{data.event}
-									</h2>
+				{raceData && (
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
+						<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+							<div>
+								<h2 className="text-3xl font-bold">
+									{raceData.event}
+								</h2>
 
-									<p className="text-zinc-400 mt-2">
-										📍 {data.location}, {data.country}
-									</p>
-								</div>
+								<p className="text-zinc-400 mt-2">
+									📍 {raceData.location}, {raceData.country}
+								</p>
+							</div>
 
-								<div className="text-left md:text-right">
-									<p className="text-zinc-500 text-sm uppercase">
-										Season
-									</p>
+							<div className="text-left md:text-right">
+								<p className="text-zinc-500 text-sm uppercase">
+									Season
+								</p>
 
-									<p className="text-3xl font-bold">
-										{data.year}
-									</p>
-								</div>
+								<p className="text-3xl font-bold">
+									{raceData.year}
+								</p>
 							</div>
 						</div>
+					</div>
+				)}
 
-						{/* Drivers */}
-						<div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-							<div className="flex items-center justify-between mb-6">
-								<h3 className="text-2xl font-bold">Drivers</h3>
+				{telemetryData && (
+					<div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+						<div className="flex items-center justify-between mb-6">
+							<h3 className="text-2xl font-bold">
+								{telemetryData.driver} Fastest Lap
+							</h3>
 
-								<span className="text-zinc-500">
-									{data.drivers.length} Drivers
-								</span>
-							</div>
-
-							<div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-								{data.drivers.map((driver) => (
-									<div
-										key={driver}
-										className="rounded-xl bg-zinc-800 p-4 text-center font-semibold transition hover:bg-zinc-700 hover:scale-105 cursor-pointer"
-									>
-										{driver}
-									</div>
-								))}
-							</div>
+							<span className="text-zinc-400">Speed Trace</span>
 						</div>
-					</>
+
+						<Plot
+							data={[
+								{
+									x: telemetryData.samples,
+									y: telemetryData.speed,
+									type: "scatter",
+									mode: "lines",
+								},
+							]}
+							layout={{
+								title: "Speed Telemetry",
+								height: 500,
+								paper_bgcolor: "rgb(24,24,27)",
+								plot_bgcolor: "rgb(24,24,27)",
+								font: {
+									color: "white",
+								},
+								margin: {
+									l: 50,
+									r: 20,
+									t: 50,
+									b: 50,
+								},
+							}}
+							style={{
+								width: "100%",
+							}}
+							config={{
+								responsive: true,
+							}}
+						/>
+					</div>
 				)}
 			</div>
 		</main>
