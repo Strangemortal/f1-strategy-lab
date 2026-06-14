@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.services.fastf1_service import get_race_info
+
 app = FastAPI(title="F1 Strategy Lab API", version="0.1.0")
 
 app.add_middleware(
@@ -17,10 +19,6 @@ def root():
     return {"status": "online", "project": "F1 Strategy Lab"}
 
 
-@app.get("/race/mock")
-def mock_race():
-    return {
-        "race": "Bahrain GP",
-        "year": 2024,
-        "drivers": [{"name": "Max Verstappen", "lap_times": [95.2, 95.0, 94.8]}],
-    }
+@app.get("/race/{year}/{grand_prix}")
+def get_race(year: int, grand_prix: str):
+    return get_race_info(year, grand_prix)
