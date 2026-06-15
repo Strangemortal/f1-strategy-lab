@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Plot from "react-plotly.js";
+import { getRace, getTelemetry } from "../lib/api";
+import DriverSelector from "../components/DriverSelector";
+import MetricSelector, { MetricKey } from "../components/MetricSelector";
+import TelemetryChart from "../components/TelemetryChart";
+import TrackMap from "../components/TrackMap";
 
 interface RaceData {
 	event: string;
@@ -14,81 +18,95 @@ interface RaceData {
 interface TelemetryData {
 	driver: string;
 	speed: number[];
+	throttle: number[];
+	brake: number[];
+	rpm: number[];
+	gear: number[];
+	drs: number[];
 	samples: number[];
 }
 
 export default function Home() {
 	const [raceData, setRaceData] = useState<RaceData | null>(null);
-	const [telemetryData, setTelemetryData] = useState<TelemetryData | null>(
-		null,
-	);
+
+	const [telemetryA, setTelemetryA] = useState<TelemetryData | null>(null);
+
+	const [telemetryB, setTelemetryB] = useState<TelemetryData | null>(null);
+
+	const [driverA, setDriverA] = useState("VER");
+
+	const [driverB, setDriverB] = useState("HAM");
+
+	const [metric, setMetric] = useState<MetricKey>("speed");
 
 	const [loading, setLoading] = useState(true);
+
 	const [error, setError] = useState("");
 
 	useEffect(() => {
-		async function fetchData() {
+		async function loadRace() {
 			try {
-				const [raceResponse, telemetryResponse] = await Promise.all([
-					fetch("http://localhost:8000/race/2024/Bahrain"),
-					fetch("http://localhost:8000/telemetry/2024/Bahrain/VER"),
-				]);
-
-				if (!raceResponse.ok) {
-					throw new Error(`Race API Error: ${raceResponse.status}`);
-				}
-
-				if (!telemetryResponse.ok) {
-					throw new Error(
-						`Telemetry API Error: ${telemetryResponse.status}`,
-					);
-				}
-
-				const race = await raceResponse.json();
-				const telemetry = await telemetryResponse.json();
+				const race = await getRace(2024, "Bahrain");
 
 				setRaceData(race);
-				setTelemetryData(telemetry);
 			} catch (err) {
 				setError(
-					err instanceof Error ? err.message : "Something went wrong",
+					err instanceof Error ? err.message : "Failed to load race",
+				);
+			}
+		}
+
+		loadRace();
+	}, []);
+
+	useEffect(() => {
+		async function loadTelemetry() {
+			try {
+				setLoading(true);
+
+				const [dataA, dataB] = await Promise.all([
+					getTelemetry(2024, "Bahrain", driverA),
+					getTelemetry(2024, "Bahrain", driverB),
+				]);
+
+				setTelemetryA(dataA);
+				setTelemetryB(dataB);
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: "Failed to load telemetry",
 				);
 			} finally {
 				setLoading(false);
 			}
 		}
 
-		fetchData();
-	}, []);
+		loadTelemetry();
+	}, [driverA, driverB]);
 
 	return (
 		<main className="min-h-screen bg-black text-white p-8">
-			<div className="max-w-6xl mx-auto">
+			<div className="max-w-7xl mx-auto">
 				<div className="mb-10">
 					<h1 className="text-5xl font-extrabold">
 						🏎️ F1 Strategy Lab
 					</h1>
 
 					<p className="text-zinc-400 mt-2">
-						Race Analytics & Strategy Platform
+						Telemetry Analysis Workbench
 					</p>
 				</div>
 
-				{loading && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-						<p className="text-lg">Loading telemetry...</p>
-					</div>
-				)}
-
 				{error && (
-					<div className="rounded-2xl border border-red-500 bg-red-950 p-6">
-						<p>{error}</p>
+					<div className="rounded-2xl border border-red-500 bg-red-950 p-6 mb-8">
+						{error}
 					</div>
 				)}
 
 				{raceData && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
-						<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8">
+						<div className="flex flex-col md:flex-row md:justify-between gap-6">
 							<div>
 								<h2 className="text-3xl font-bold">
 									{raceData.event}
@@ -99,8 +117,8 @@ export default function Home() {
 								</p>
 							</div>
 
-							<div className="text-left md:text-right">
-								<p className="text-zinc-500 text-sm uppercase">
+							<div>
+								<p className="text-zinc-500 uppercase text-sm">
 									Season
 								</p>
 
@@ -112,48 +130,49 @@ export default function Home() {
 					</div>
 				)}
 
-				{telemetryData && (
-					<div className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-						<div className="flex items-center justify-between mb-6">
-							<h3 className="text-2xl font-bold">
-								{telemetryData.driver} Fastest Lap
-							</h3>
+				{raceData && (
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8">
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+							<DriverSelector
+								label="Driver A"
+								value={driverA}
+								drivers={raceData.drivers}
+								onChange={setDriverA}
+							/>
 
-							<span className="text-zinc-400">Speed Trace</span>
+							<DriverSelector
+								label="Driver B"
+								value={driverB}
+								drivers={raceData.drivers}
+								onChange={setDriverB}
+							/>
+
+							<MetricSelector
+								value={metric}
+								onChange={setMetric}
+							/>
 						</div>
-
-						<Plot
-							data={[
-								{
-									x: telemetryData.samples,
-									y: telemetryData.speed,
-									type: "scatter",
-									mode: "lines",
-								},
-							]}
-							layout={{
-								title: "Speed Telemetry",
-								height: 500,
-								paper_bgcolor: "rgb(24,24,27)",
-								plot_bgcolor: "rgb(24,24,27)",
-								font: {
-									color: "white",
-								},
-								margin: {
-									l: 50,
-									r: 20,
-									t: 50,
-									b: 50,
-								},
-							}}
-							style={{
-								width: "100%",
-							}}
-							config={{
-								responsive: true,
-							}}
-						/>
 					</div>
+				)}
+
+				{loading && (
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+						Loading telemetry...
+					</div>
+				)}
+
+				{telemetryA && telemetryB && !loading && (
+					<>
+						<TelemetryChart
+							driverA={driverA}
+							driverB={driverB}
+							telemetryA={telemetryA}
+							telemetryB={telemetryB}
+							metric={metric}
+						/>
+
+						<TrackMap driver={driverA} />
+					</>
 				)}
 			</div>
 		</main>
