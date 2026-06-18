@@ -41,3 +41,52 @@ export async function getTrack(
 
 	return response.json();
 }
+
+export async function getDelta(
+	year: number,
+	grandPrix: string,
+	driverA: string,
+	driverB: string,
+) {
+	const response = await fetch(
+		`${API_BASE}/delta/${year}/${grandPrix}/${driverA}/${driverB}`,
+	);
+
+	if (!response.ok) {
+		throw new Error("Failed to fetch delta");
+	}
+
+	return response.json();
+}
+
+export async function getStrategy(
+	year: number,
+	grandPrix: string,
+	driver: string,
+) {
+	const response = await fetch(
+		`${API_BASE}/strategy/${year}/${grandPrix}/${driver}`,
+	);
+
+	if (!response.ok) {
+		throw new Error("Failed to fetch strategy");
+	}
+
+	return response.json();
+}
+
+export async function getRecommendation(
+	year: number,
+	grandPrix: string,
+	driver: string,
+) {
+	const response = await fetch(
+		`${API_BASE}/recommendation/${year}/${grandPrix}/${driver}`,
+	);
+
+	if (!response.ok) {
+		throw new Error(`Recommendation API Error: ${response.status}`);
+	}
+
+	return response.json();
+}

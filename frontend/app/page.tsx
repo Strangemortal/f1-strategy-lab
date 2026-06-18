@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getRace, getTelemetry } from "../lib/api";
+import {
+	getRace,
+	getTelemetry,
+	getDelta,
+	getStrategy,
+	getRecommendation,
+} from "../lib/api";
+
 import DriverSelector from "../components/DriverSelector";
 import MetricSelector, { MetricKey } from "../components/MetricSelector";
 import TelemetryChart from "../components/TelemetryChart";
 import TrackMap from "../components/TrackMap";
+import LapDeltaChart from "../components/LapDeltaChart";
+import StrategyCard from "../components/StrategyCard";
+import RecommendationCard from "../components/RecommendationCard";
 
 interface RaceData {
 	event: string;
@@ -26,12 +36,46 @@ interface TelemetryData {
 	samples: number[];
 }
 
+interface DeltaData {
+	driver_a: string;
+	driver_b: string;
+	delta: number[];
+	samples: number[];
+}
+
+interface Stint {
+	compound: string;
+	start_lap: number;
+	end_lap: number;
+}
+
+interface StrategyData {
+	driver: string;
+	stints: Stint[];
+}
+
+interface RecommendationData {
+	driver: string;
+	current_compound: string;
+	current_tyre_life: number;
+	recommended_pit_lap: number;
+	remaining_laps: number;
+	message: string;
+}
+
 export default function Home() {
 	const [raceData, setRaceData] = useState<RaceData | null>(null);
 
 	const [telemetryA, setTelemetryA] = useState<TelemetryData | null>(null);
 
 	const [telemetryB, setTelemetryB] = useState<TelemetryData | null>(null);
+
+	const [deltaData, setDeltaData] = useState<DeltaData | null>(null);
+
+	const [strategyData, setStrategyData] = useState<StrategyData | null>(null);
+
+	const [recommendationData, setRecommendationData] =
+		useState<RecommendationData | null>(null);
 
 	const [driverA, setDriverA] = useState("VER");
 
@@ -60,35 +104,42 @@ export default function Home() {
 	}, []);
 
 	useEffect(() => {
-		async function loadTelemetry() {
+		async function loadAnalytics() {
 			try {
 				setLoading(true);
 
-				const [dataA, dataB] = await Promise.all([
-					getTelemetry(2024, "Bahrain", driverA),
-					getTelemetry(2024, "Bahrain", driverB),
-				]);
+				const [dataA, dataB, delta, strategy, recommendation] =
+					await Promise.all([
+						getTelemetry(2024, "Bahrain", driverA),
+						getTelemetry(2024, "Bahrain", driverB),
+						getDelta(2024, "Bahrain", driverA, driverB),
+						getStrategy(2024, "Bahrain", driverA),
+						getRecommendation(2024, "Bahrain", driverA),
+					]);
 
 				setTelemetryA(dataA);
 				setTelemetryB(dataB);
+				setDeltaData(delta);
+				setStrategyData(strategy);
+				setRecommendationData(recommendation);
 			} catch (err) {
 				setError(
 					err instanceof Error
 						? err.message
-						: "Failed to load telemetry",
+						: "Failed to load analytics",
 				);
 			} finally {
 				setLoading(false);
 			}
 		}
 
-		loadTelemetry();
+		loadAnalytics();
 	}, [driverA, driverB]);
 
 	return (
-		<main className="min-h-screen bg-black text-white p-8">
+		<main className="min-h-screen bg-black text-white p-6">
 			<div className="max-w-7xl mx-auto">
-				<div className="mb-10">
+				<div className="mb-8">
 					<h1 className="text-5xl font-extrabold">
 						🏎️ F1 Strategy Lab
 					</h1>
@@ -99,14 +150,14 @@ export default function Home() {
 				</div>
 
 				{error && (
-					<div className="rounded-2xl border border-red-500 bg-red-950 p-6 mb-8">
+					<div className="rounded-2xl border border-red-500 bg-red-950 p-6 mb-6">
 						{error}
 					</div>
 				)}
 
 				{raceData && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8">
-						<div className="flex flex-col md:flex-row md:justify-between gap-6">
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6">
+						<div className="flex flex-col md:flex-row md:justify-between gap-4">
 							<div>
 								<h2 className="text-3xl font-bold">
 									{raceData.event}
@@ -131,8 +182,8 @@ export default function Home() {
 				)}
 
 				{raceData && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8">
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6">
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<DriverSelector
 								label="Driver A"
 								value={driverA}
@@ -156,13 +207,29 @@ export default function Home() {
 				)}
 
 				{loading && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-						Loading telemetry...
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+						Loading analytics...
 					</div>
 				)}
 
-				{telemetryA && telemetryB && !loading && (
+				{telemetryA && telemetryB && deltaData && !loading && (
 					<>
+						<div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+							<TrackMap driver={driverA} />
+
+							{recommendationData && (
+								<RecommendationCard data={recommendationData} />
+							)}
+						</div>
+
+						<div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
+							{strategyData && (
+								<StrategyCard data={strategyData} />
+							)}
+
+							<LapDeltaChart data={deltaData} />
+						</div>
+
 						<TelemetryChart
 							driverA={driverA}
 							driverB={driverB}
@@ -170,8 +237,6 @@ export default function Home() {
 							telemetryB={telemetryB}
 							metric={metric}
 						/>
-
-						<TrackMap driver={driverA} />
 					</>
 				)}
 			</div>
