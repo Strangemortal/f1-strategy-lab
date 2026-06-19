@@ -1,64 +1,216 @@
 # F1 Strategy Lab
 
-A Formula 1 analytics, strategy simulation, and race intelligence platform.
+F1 Strategy Lab is an open-source Formula 1 analytics platform designed to transform race telemetry into meaningful performance insights and strategic recommendations.
 
-## Vision
+The platform combines telemetry visualization, driver comparison, track analysis, and strategy evaluation into a unified analytical dashboard built on real Formula 1 data.
 
-F1 Strategy Lab aims to bridge the gap between race data and race decisions.
+---
 
-The platform will allow users to:
+# Features
 
-- Analyze telemetry
-- Compare drivers
-- Visualize race strategies
-- Simulate alternative race outcomes
-- Generate race-engineering insights
+## Race Information
 
-## Planned Features
+Retrieve race metadata including:
 
-### Phase 1
+- Event Information
+- Circuit Location
+- Driver Lineup
+- Season Data
 
-- Race dashboard
-- Lap-time analysis
-- Driver comparisons
+## Telemetry Analysis
 
-### Phase 2
+Compare driver telemetry using interactive visualizations.
 
-- Strategy simulator
-- Tyre degradation modeling
+Supported metrics:
 
-### Phase 3
+- Speed
+- Throttle
+- Brake
+- RPM
+- Gear
+- DRS
 
-- What-if simulations
-- Race prediction engine
+## Track Visualization
 
-### Phase 4
+Visualize a driver's fastest lap using positional telemetry data.
 
-- AI race engineer
-- Mobile application
+Features include:
 
-## Tech Stack
+- Circuit Rendering
+- Track Mapping
+- Speed-Based Heatmaps
 
-### Frontend
+## Lap Delta Analysis
+
+Compare driver performance throughout a lap and identify gains and losses across the circuit.
+
+## Strategy Analysis
+
+Analyze tyre compounds, pit stops, and race stints.
+
+## Strategy Recommendations
+
+Generate pit stop recommendations based on current tyre usage and race conditions.
+
+---
+
+# Technology Stack
+
+## Frontend
 
 - Next.js
+- React
 - TypeScript
-- Plotly
+- Tailwind CSS
+- Plotly.js
 
-### Backend
+## Backend
 
-- FastAPI
 - Python
-
-### Data
-
+- FastAPI
 - FastF1
 
-### Machine Learning
+## Data Source
 
-- Scikit-Learn
-- XGBoost
+- FastF1
+- Official Formula 1 Timing Data
 
-## Status
+---
 
-Project initialization.
+# Project Structure
+
+```text
+f1-strategy-lab/
+│
+├── backend/
+├── frontend/
+├── data/
+├── docs/
+│
+├── README.md
+├── LICENSE
+└── .gitignore
+```
+
+---
+
+# Getting Started
+
+## Backend
+
+```bash
+cd backend
+
+python -m venv .venv
+
+source .venv/bin/activate
+
+pip install -r requirements.txt
+
+uvicorn app.main:app --reload
+```
+
+Backend URL:
+
+```text
+http://localhost:8000
+```
+
+---
+
+## Frontend
+
+```bash
+cd frontend
+
+npm install
+
+npm run dev
+```
+
+Frontend URL:
+
+```text
+http://localhost:3000
+```
+
+---
+
+# Documentation
+
+Detailed project documentation is available in the `docs/` directory.
+
+Available documents:
+
+- Software Requirements Specification (SRS)
+- Use Cases
+- Domain Model
+- System Architecture
+- API Reference
+- Team Onboarding Guide
+
+Supporting diagrams include:
+
+- Use Case Diagram
+- Domain Model Diagram
+- Architecture Diagram
+- Analysis Workflow Diagram
+
+---
+
+# Roadmap
+
+## Current
+
+- Race Information Retrieval
+- Telemetry Analysis
+- Track Visualization
+- Speed Heatmaps
+- Lap Delta Analysis
+- Strategy Analysis
+- Recommendation Engine
+
+## Planned
+
+- Dynamic Race Search
+- Multi-Race Comparison
+- Sector Analysis
+- Pit Window Prediction
+- Strategy Simulation Engine
+- AI-Assisted Strategy Analysis
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+Areas of contribution include:
+
+- Frontend Development
+- Backend Development
+- Data Visualization
+- Strategy Analytics
+- Documentation
+
+Please refer to:
+
+```text
+docs/TEAM_ONBOARDING.md
+```
+
+before contributing.
+
+---
+
+# License
+
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0).
+
+See the LICENSE file for details.
+
+---
+
+# Vision
+
+The long-term goal of F1 Strategy Lab is to evolve into a complete race engineering and strategy analysis platform capable of supporting telemetry exploration, strategy simulation, predictive analytics, and advanced decision-support tooling for Formula 1 enthusiasts, students, researchers, and developers.

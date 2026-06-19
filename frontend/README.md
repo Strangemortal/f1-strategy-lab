@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# F1 Strategy Lab Frontend
 
-## Getting Started
+The frontend provides an interactive dashboard for exploring Formula 1 telemetry, track visualizations, strategy insights, and driver comparisons.
 
-First, run the development server:
+---
+
+# Technology Stack
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- Plotly.js
+
+---
+
+# Local Development
+
+Navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+---
+
+# Running the Frontend
+
+Start the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The application will be available at:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+# Backend Requirement
 
-To learn more about Next.js, take a look at the following resources:
+The frontend expects the FastAPI backend to be running locally.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Default backend URL:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+http://localhost:8000
+```
 
-## Deploy on Vercel
+Ensure the backend server is running before opening the dashboard.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Project Structure
+
+```text
+frontend/
+│
+├── app/
+│
+├── components/
+│
+├── lib/
+│
+├── public/
+│
+└── package.json
+```
+
+---
+
+# Core Components
+
+- DriverSelector
+- MetricSelector
+- TelemetryChart
+- TrackMap
+- LapDeltaChart
+- StrategyCard
+
+---
+
+# Features
+
+- Race Information Display
+- Driver Comparison
+- Telemetry Visualization
+- Speed Heatmaps
+- Lap Delta Analysis
+- Strategy Analysis
+- Recommendation Display
+
+---
+
+# Development Workflow
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run development server:
+
+```bash
+npm run dev
+```
+
+Build production version:
+
+```bash
+npm run build
+```
+
+Start production build:
+
+```bash
+npm start
+```
+
+---
+
+# Notes
+
+The frontend communicates with the backend through helper functions located in:
+
+```text
+lib/api.ts
+```
+
+All API requests should be centralized through this module to maintain consistency across the application.
