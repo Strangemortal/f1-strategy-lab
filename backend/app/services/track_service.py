@@ -1,10 +1,10 @@
-import fastf1
+from functools import lru_cache
+from app.services.fastf1_service import get_loaded_session
 
 
+@lru_cache(maxsize=32)
 def get_track_map(year: int, grand_prix: str, driver: str):
-    session = fastf1.get_session(year, grand_prix, "R")
-
-    session.load()
+    session = get_loaded_session(year, grand_prix)
 
     laps = session.laps.pick_drivers(driver)
 
@@ -22,3 +22,4 @@ def get_track_map(year: int, grand_prix: str, driver: str):
         "y": position["Y"].fillna(0).tolist()[:min_len],
         "speed": telemetry["Speed"].fillna(0).tolist()[:min_len],
     }
+

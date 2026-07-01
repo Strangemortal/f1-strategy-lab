@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
 	getRace,
 	getTelemetry,
 	getDelta,
 	getStrategy,
-	getRecommendation,
 } from "../lib/api";
 
+import RaceSearch from "../components/RaceSearch";
 import DriverSelector from "../components/DriverSelector";
 import MetricSelector, { MetricKey } from "../components/MetricSelector";
 import TelemetryChart from "../components/TelemetryChart";
@@ -54,16 +54,12 @@ interface StrategyData {
 	stints: Stint[];
 }
 
-interface RecommendationData {
-	driver: string;
-	current_compound: string;
-	current_tyre_life: number;
-	recommended_pit_lap: number;
-	remaining_laps: number;
-	message: string;
-}
+
 
 export default function Home() {
+	const [year, setYear] = useState(2024);
+	const [grandPrix, setGrandPrix] = useState("Bahrain");
+
 	const [raceData, setRaceData] = useState<RaceData | null>(null);
 
 	const [telemetryA, setTelemetryA] = useState<TelemetryData | null>(null);
@@ -74,8 +70,7 @@ export default function Home() {
 
 	const [strategyData, setStrategyData] = useState<StrategyData | null>(null);
 
-	const [recommendationData, setRecommendationData] =
-		useState<RecommendationData | null>(null);
+
 
 	const [driverA, setDriverA] = useState("VER");
 
@@ -87,41 +82,62 @@ export default function Home() {
 
 	const [error, setError] = useState("");
 
+	const handleSelectRace = useCallback((newYear: number, newGrandPrix: string) => {
+		setYear(newYear);
+		setGrandPrix(newGrandPrix);
+		// Reset state for new race
+		setRaceData(null);
+		setTelemetryA(null);
+		setTelemetryB(null);
+		setDeltaData(null);
+		setStrategyData(null);
+		setError("");
+	}, []);
+
 	useEffect(() => {
 		async function loadRace() {
 			try {
-				const race = await getRace(2024, "Bahrain");
+				setLoading(true);
+				const race = await getRace(year, grandPrix);
 
 				setRaceData(race);
+
+				// Set default drivers from the race data if available
+				if (race.drivers && race.drivers.length >= 2) {
+					setDriverA(race.drivers[0]);
+					setDriverB(race.drivers[1]);
+				}
 			} catch (err) {
 				setError(
 					err instanceof Error ? err.message : "Failed to load race",
 				);
+			} finally {
+				setLoading(false);
 			}
 		}
 
 		loadRace();
-	}, []);
+	}, [year, grandPrix]);
 
 	useEffect(() => {
+		if (!raceData) return;
+
 		async function loadAnalytics() {
 			try {
 				setLoading(true);
 
-				const [dataA, dataB, delta, strategy, recommendation] =
+				const [dataA, dataB, delta, strategy] =
 					await Promise.all([
-						getTelemetry(2024, "Bahrain", driverA),
-						getTelemetry(2024, "Bahrain", driverB),
-						getDelta(2024, "Bahrain", driverA, driverB),
-						getStrategy(2024, "Bahrain", driverA),
-						getRecommendation(2024, "Bahrain", driverA),
+						getTelemetry(year, grandPrix, driverA),
+						getTelemetry(year, grandPrix, driverB),
+						getDelta(year, grandPrix, driverA, driverB),
+						getStrategy(year, grandPrix, driverA),
 					]);
 
 				setTelemetryA(dataA);
 				setTelemetryB(dataB);
 				setDeltaData(delta);
 				setStrategyData(strategy);
-				setRecommendationData(recommendation);
 			} catch (err) {
 				setError(
 					err instanceof Error
@@ -134,19 +150,30 @@ export default function Home() {
 		}
 
 		loadAnalytics();
-	}, [driverA, driverB]);
+	}, [driverA, driverB, raceData, year, grandPrix]);
 
 	return (
 		<main className="min-h-screen bg-black text-white p-6">
 			<div className="max-w-7xl mx-auto">
+				{/* Header with Search */}
 				<div className="mb-8">
-					<h1 className="text-5xl font-extrabold">
-						🏎️ F1 Strategy Lab
-					</h1>
+					<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+						<div>
+							<h1 className="text-5xl font-extrabold">
+								🏎️ F1 Strategy Lab
+							</h1>
 
-					<p className="text-zinc-400 mt-2">
-						Telemetry Analysis Workbench
-					</p>
+							<p className="text-zinc-400 mt-2">
+								Telemetry Analysis Workbench
+							</p>
+						</div>
+
+						<RaceSearch
+							onSelectRace={handleSelectRace}
+							currentYear={year}
+							currentGrandPrix={grandPrix}
+						/>
+					</div>
 				</div>
 
 				{error && (
@@ -207,8 +234,9 @@ export default function Home() {
 				)}
 
 				{loading && (
-					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-						Loading analytics...
+					<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 flex items-center gap-3">
+						<div className="w-5 h-5 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+						<span className="text-zinc-400">Loading analytics...</span>
 					</div>
 				)}
 
@@ -217,9 +245,7 @@ export default function Home() {
 						<div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
 							<TrackMap driver={driverA} />
 
-							{recommendationData && (
-								<RecommendationCard data={recommendationData} />
-							)}
+							<RecommendationCard driver={driverA} />
 						</div>
 
 						<div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
@@ -243,3 +269,4 @@ export default function Home() {
 		</main>
 	);
 }
+

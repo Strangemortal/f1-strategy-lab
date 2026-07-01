@@ -1,19 +1,20 @@
-import fastf1
+from functools import lru_cache
+from app.services.fastf1_service import get_loaded_session
 
 
+@lru_cache(maxsize=32)
 def get_lap_delta(
     year: int,
     grand_prix: str,
     driver_a: str,
     driver_b: str
 ):
-    session = fastf1.get_session(
+    session = get_loaded_session(
         year,
         grand_prix,
         "R"
     )
 
-    session.load()
 
     lap_a = (
         session.laps

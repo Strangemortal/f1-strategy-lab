@@ -1,22 +1,23 @@
-import fastf1
+from functools import lru_cache
+from app.services.fastf1_service import get_loaded_session
 
 SOFT_MAX = 18
 MEDIUM_MAX = 25
 HARD_MAX = 32
 
 
+@lru_cache(maxsize=32)
 def get_strategy_recommendation(
     year: int,
     grand_prix: str,
     driver: str,
 ):
-    session = fastf1.get_session(
+    session = get_loaded_session(
         year,
         grand_prix,
         "R",
     )
 
-    session.load()
 
     laps = session.laps.pick_drivers(driver)
 

@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getRecommendation } from "../lib/api";
+
 interface RecommendationData {
 	driver: string;
 	current_compound: string;
@@ -8,10 +13,54 @@ interface RecommendationData {
 }
 
 interface Props {
-	data: RecommendationData;
+	driver: string;
 }
 
-export default function RecommendationCard({ data }: Props) {
+export default function RecommendationCard({ driver }: Props) {
+	const [data, setData] = useState<RecommendationData | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState("");
+
+	useEffect(() => {
+		async function loadRecommendation() {
+			try {
+				setLoading(true);
+				setError("");
+				const res = await getRecommendation(2024, "Bahrain", driver);
+				setData(res);
+			} catch (err) {
+				setError(
+					err instanceof Error
+						? err.message
+						: "Failed to load recommendation",
+				);
+			} finally {
+				setLoading(false);
+			}
+		}
+		loadRecommendation();
+	}, [driver]);
+
+	if (loading) {
+		return (
+			<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8 h-[312px] flex items-center justify-center text-zinc-400">
+				Loading recommendation...
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="rounded-2xl border border-red-500 bg-red-950 p-8 mb-8 text-red-400">
+				{error}
+			</div>
+		);
+	}
+
+	if (!data) {
+		return null;
+	}
+
 	return (
 		<div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 mb-8">
 			<div className="flex items-center justify-between mb-6">
